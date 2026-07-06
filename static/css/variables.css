@@ -1,0 +1,85 @@
+:root {
+  /* Typography Scale */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  
+  /* Color Palette - Core System Base */
+  --color-primary: #0057FF;
+  --color-primary-hover: #0044cc;
+  --color-primary-glow: rgba(0, 87, 255, 0.15);
+  
+  --color-cyan: #00C2FF;
+  --color-cyan-hover: #00aae0;
+  --color-cyan-glow: rgba(0, 194, 255, 0.2);
+  
+  --color-accent: #FFD100;
+  --color-accent-hover: #e6bd00;
+  --color-accent-glow: rgba(255, 209, 0, 0.2);
+  
+  --color-danger: #FF3D57;
+  --color-danger-hover: #e03046;
+  --color-danger-glow: rgba(255, 61, 87, 0.15);
+  
+  --color-warning: #FFB300;
+  --color-warning-hover: #e6a100;
+  --color-warning-glow: rgba(255, 179, 0, 0.15);
+  
+  --color-success: #00C853;
+  --color-success-hover: #00b047;
+  --color-success-glow: rgba(0, 200, 83, 0.15);
+  
+  /* Layout Spacing */
+  --sidebar-width: 260px;
+  --header-height: 70px;
+  
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* DEFAULT THEME: Dark Navy Mode */
+  --bg-primary: #0a0f1d;
+  --bg-secondary: #0f172a;
+  --bg-tertiary: #1e293b;
+  --bg-active: #1e293b;
+  --bg-glass: rgba(15, 23, 42, 0.6);
+  --bg-glass-hover: rgba(30, 41, 59, 0.7);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-glass-focus: rgba(0, 194, 255, 0.4);
+  
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-inverse: #0f172a;
+
+  --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-glow: 0 0 15px rgba(0, 194, 255, 0.15);
+  --glow-intensity: 0.6;
+}
+
+body.light-mode {
+  /* LIGHT THEME: Clean White / Minimal gray Mode */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --bg-active: #e2e8f0;
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  --bg-glass-hover: rgba(255, 255, 255, 0.9);
+  --border-glass: rgba(0, 0, 0, 0.08);
+  --border-glass-focus: rgba(0, 87, 255, 0.4);
+  
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+
+  --shadow-premium: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  --shadow-glow: 0 0 10px rgba(0, 87, 255, 0.08);
+  --glow-intensity: 0.2;
+}

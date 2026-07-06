@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentraslice - Enterprise 5G Network Slice Vulnerability Assessment Platform</title>
+  
+  <!-- FontAwesome Icons & CSS CDNs -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom Design Tokens & Stylesheets -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body class="dark-mode">
+
+  <!-- --- TOAST NOTIFICATIONS CONTAINER --- -->
+  <div id="toastContainer" style="position: fixed; top: 24px; right: 24px; display: flex; flex-direction: column; gap: 12px; z-index: 9999;"></div>
+
+  <!-- --- SYSTEM BLOCKING LOADER OVERLAY --- -->
+  <div id="systemLoaderOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 9999;">
+    <div style="width: 48px; height: 48px; border: 4px solid var(--border-glass); border-top-color: var(--color-cyan); border-radius: 50%; animation: spin 1s infinite linear;"></div>
+    <span style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--color-cyan); letter-spacing: 1px;">PROCESSING TRANSACTION...</span>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 1. LANDING PAGE VIEW                       -->
+  <!-- ========================================== -->
+  <div id="landingView" class="root-layout landing-viewport" style="display: flex;">
+    <header class="landing-header">
+      <div class="landing-logo">
+        <div class="sidebar-logo">S</div>
+        <span>SENTRA</span>SLICE
+      </div>
+      <div style="display: flex; gap: 16px; align-items: center;">
+        <button class="btn btn-outline theme-toggle" title="Toggle Light/Dark Theme">
+          <i class="fas fa-sun"></i>
+        </button>
+        <button class="btn btn-primary" id="landingToAuthBtn">Access Console</button>
+      </div>
+    </header>
+    
+    <main class="landing-hero">
+      <div class="hero-text">
+        <span class="badge badge-low" style="margin-bottom: 16px;">5G Core Security Platform</span>
+        <h2>Protecting the Future of <span>5G Network</span> Infrastructure</h2>
+        <p>Enterprise vulnerability assessment platform for intelligent network slice security. Audit configs, isolate GTP tunnels, analyze threats in real-time, and download GSMA-compliant report cards.</p>
+        <div class="hero-ctas">
+          <button class="btn btn-cyan btn-primary" id="landingToDashboardBtn">
+            <i class="fas fa-bolt"></i> Run Assessment
+          </button>
+          <a class="btn btn-outline" href="#learn-more" onclick="showToast('Documentation manual is located in system /references.', 'info')">
+            Learn More
+          </a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <canvas id="landingCanvas"></canvas>
+      </div>
+    </main>
+    
+    <section class="landing-stats">
+      <div class="stat-card">
+        <div class="stat-number">99.999%</div>
+        <div class="stat-label">Availability SLA</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">500+</div>
+        <div class="stat-label">Slices Monitored</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">10,000+</div>
+        <div class="stat-label">Threats Analyzed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">24/7</div>
+        <div class="stat-label">NOC Supervision</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. AUTHENTICATION VIEW                     -->
+  <!-- ========================================== -->
+  <div id="authView" class="root-layout auth-viewport" style="display: none;">
+    <div class="auth-left-visual">
+      <div class="auth-branding">
+        <div class="sidebar-logo">S</div>
+        <span style="color:#ffffff">SENTRA</span><span style="color:var(--color-cyan)">SLICE</span>
+      </div>
+      <canvas id="authCanvas" style="width:100%; height:320px; margin: auto 0;"></canvas>
+      <div class="auth-left-footer">
+        <p>© 2026 Sentraslice Operations. SECURE CONNECTION.</p>
+      </div>
+    </div>
+    
+    <div class="auth-right-form">
+      <div class="auth-card glass-card">
+        <h3>Operator Sign In</h3>
+        <p>Enter credentials to access the 5G slice security console.</p>
+        
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="loginEmail">Operator Account ID / Email</label>
+            <input type="text" id="loginEmail" class="input-field" placeholder="operator@sentraslice.io" required value="admin@sentraslice.io">
+          </div>
+          
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" class="input-field" placeholder="••••••••" required value="Admin@123456">
+          </div>
+          
+          <!-- MFA Code Field (Initially Hidden) -->
+          <div class="form-group" id="loginMfaBox" style="display: none;">
+            <label for="loginMfaCode" style="color: var(--color-warning);">2FA Authenticator Token</label>
+            <input type="text" id="loginMfaCode" class="input-field" style="border-color: var(--color-warning);" placeholder="123456">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Enter "123456" for mock 2FA verify check</span>
+          </div>
+          
+          <div class="auth-options">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" style="accent-color: var(--color-cyan)"> Remember me
+            </label>
+            <a href="#" style="color: var(--color-cyan)" onclick="showToast('Password resets are governed by LDAP directory services.', 'warning')">Forgot Password?</a>
+          </div>
+          
+          <!-- Biometric Mock Fingerprint -->
+          <div class="biometric-scanner-box">
+            <div class="fingerprint-icon" id="biometricScanner" title="Use Biometric Bypass Profile">
+              <i class="fas fa-fingerprint"></i>
+            </div>
+            <span style="font-size: 0.75rem; color: var(--text-secondary);">Touch sensor for biometric auth placeholder</span>
+          </div>
+          
+          <button type="submit" class="btn btn-cyan btn-primary" style="width: 100%; padding: 12px;">
+            <i class="fas fa-key"></i> Authenticate Session
+          </button>
+        </form>
+        
+        <div class="sso-divider">OR INTEGRATED SSO</div>
+        <div class="sso-grid">
+          <button class="btn btn-outline" style="font-size:0.8rem" onclick="showToast('Redirecting to Google Directory Hub...', 'info')">
+            <i class="fab fa-google"></i> Google SSO
+          </button>
+          <button class="btn btn-outline" style="font-size:0.8rem" onclick="showToast('Redirecting to Microsoft Azure Tenant...', 'info')">
+            <i class="fab fa-windows"></i> Microsoft SSO
+          </button>
+        </div>
+        
+        <div style="text-align: center; margin-top: 24px;">
+          <a href="#" id="authToLandingLink" style="font-size: 0.85rem; color: var(--text-muted);"><i class="fas fa-arrow-left"></i> Return to Homepage</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. WORKSPACE CORE VIEW (DASHBOARD CONTAINER)-->
+  <!-- ========================================== -->
+  <div id="workspaceView" class="root-layout workspace-container" style="display: none;">
+    
+    <!-- --- SIDEBAR --- -->
+    <aside class="sidebar-panel">
+      <div>
+        <div class="sidebar-brand">
+          <div class="sidebar-logo">S</div>
+          <h1>Sentraslice</h1>
+        </div>
+        <ul class="sidebar-menu">
+          <li class="sidebar-item active-menu" data-view="overview">
+            <a href="#"><i class="fas fa-chart-network"></i> <span>Overview</span></a>
+          </li>
+          <li class="sidebar-item" data-view="slices">
+            <a href="#"><i class="fas fa-network-wired"></i> <span>Slice Manager</span></a>
+          </li>
+          <li class="sidebar-item" data-view="scanner">
+            <a href="#"><i class="fas fa-shield-virus"></i> <span>Assessment Scan</span></a>
+          </li>
+          <li class="sidebar-item" data-view="threats">
+            <a href="#"><i class="fas fa-radiation"></i> <span>Threat Center</span></a>
+          </li>
+          <li class="sidebar-item" data-view="analytics">
+            <a href="#"><i class="fas fa-project-diagram"></i> <span>Analytics</span></a>
+          </li>
+          <li class="sidebar-item" data-view="reports">
+            <a href="#"><i class="fas fa-file-contract"></i> <span>Reports card</span></a>
+          </li>
+          <li class="sidebar-item" data-view="audit">
+            <a href="#"><i class="fas fa-history"></i> <span>Audit Logs</span></a>
+          </li>
+          <li class="sidebar-item admin-only" data-view="users" style="display:none;">
+            <a href="#"><i class="fas fa-users"></i> <span>User Management</span></a>
+          </li>
+          <li class="sidebar-item" data-view="settings">
+            <a href="#"><i class="fas fa-cogs"></i> <span>Settings</span></a>
+          </li>
+        </ul>
+      </div>
+      
+      <div class="sidebar-footer">
+        <div class="operator-card">
+          <div class="operator-avatar user-avatar-placeholder">OP</div>
+          <div class="operator-info">
+            <span class="operator-name user-name-placeholder">Operator</span>
+            <span class="operator-role user-role-placeholder">SecOps Personnel</span>
+          </div>
+          <a href="#" id="logoutBtn" style="margin-left: auto; color: var(--text-muted);" title="Sign Out Session">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </div>
+    </aside>
+    
+    <!-- --- HEADER --- -->
+    <header class="header-panel">
+      <div class="header-title-section">
+        <h2 id="viewportTitle">Assessment Overview</h2>
+      </div>
+      <div class="header-controls">
+        <div class="system-status-indicator">
+          <span class="status-dot pulse"></span>
+          <span>NOC Status: Operational</span>
+        </div>
+        <button class="btn btn-outline theme-toggle" title="Toggle Color Theme">
+          <i class="fas fa-sun"></i>
+        </button>
+        
+        <!-- Notification Dropdown -->
+        <div style="position: relative;">
+          <button class="btn btn-outline btn-icon" id="notifBellBtn" onclick="toggleDropdown('notifDropdownContainer')" style="position: relative;">
+            <i class="fas fa-bell"></i>
+            <span id="notificationBadge" style="position: absolute; top: 0; right: 0; width: 14px; height: 14px; border-radius: 50%; background-color: var(--color-danger); color: white; font-size: 0.65rem; font-weight: bold; display: flex; align-items: center; justify-content: center; display: none;">0</span>
+          </button>
+          
+          <div id="notifDropdownContainer" class="glass-card" style="position: absolute; top: 50px; right: 0; width: 320px; display: none; z-index: 100; padding: 12px; border-color: var(--border-glass-focus);">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-glass); padding-bottom:8px; margin-bottom:8px;">
+              <h5 style="font-weight:700">Vulnerability Alerts</h5>
+              <a href="#" style="font-size:0.75rem; color:var(--color-cyan);" onclick="fetch('/api/notifications/read-all', {method:'POST'}).then(()=>fetchNotifications())">Mark read</a>
+            </div>
+            <div id="notificationListDropdown" style="display:flex; flex-direction:column; gap:8px;">
+              <!-- Dynamic Notification feeds -->
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </header>
+    
+    <!-- --- MAIN VIEWPORT --- -->
+    <main class="main-viewport">
+      <div class="content-wrapper">
+        
+        <!-- ========================================== -->
+        <!-- VIEW 3.1: OVERVIEW (DASHBOARD)             -->
+        <!-- ========================================== -->
+        <div id="overviewView" class="app-view-section active-view">
+          <div class="dashboard-grid">
+            
+            <!-- Cards summary row -->
+            <div class="metrics-summary-cards">
+              <div class="glass-card metric-widget cyan-glow">
+                <div class="metric-details">
+                  <span class="slice-metric-label">TOTAL NET SLICES</span>
+                  <span class="metric-value" id="metricTotalSlices">0</span>
+                </div>
+                <div class="metric-icon"><i class="fas fa-network-wired"></i></div>
+              </div>
+              <div class="glass-card metric-widget blue-glow">
+                <div class="metric-details">
+                  <span class="slice-metric-label">ACTIVE PROFILES</span>
+                  <span class="metric-value" id="metricActiveSlices">0</span>
+                </div>
+                <div class="metric-icon"><i class="fas fa-broadcast-tower"></i></div>
+              </div>
+              <div class="glass-card metric-widget red-glow">
+                <div class="metric-details">
+                  <span class="slice-metric-label">THREATS DISCOVERED</span>
+                  <span class="metric-value" id="metricThreatCount">0</span>
+                </div>
+                <div class="metric-icon"><i class="fas fa-radiation-alt"></i></div>
+              </div>
+              <div class="glass-card metric-widget green-glow">
+                <div class="metric-details">
+                  <span class="slice-metric-label">CRITICAL THREATS</span>
+                  <span class="metric-value" id="metricCriticalThreats">0</span>
+                </div>
+                <div class="metric-icon"><i class="fas fa-shield-virus"></i></div>
+              </div>
+            </div>
+            
+            <!-- Left topology panel -->
+            <div class="glass-card topology-card">
+              <div class="card-header">
+                <h3>Interactive 5G Topology Map</h3>
+                <span class="badge badge-low">Live Vector Feed</span>
+              </div>
+              <div class="topology-canvas-container">
+                <canvas id="topologyCanvas"></canvas>
+                <div class="topology-legend">
+                  <div class="legend-item"><span class="legend-color" style="background:#0057FF"></span> 5G Core Nodes</div>
+                  <div class="legend-item"><span class="legend-color" style="background:#8b5cf6"></span> gNodeB RAN</div>
+                  <div class="legend-item"><span class="legend-color" style="background:#10b981"></span> Normal Endpoint</div>
+                  <div class="legend-item"><span class="legend-color" style="background:#FF3D57"></span> Penetrated Threat</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Right panels -->
+            <div class="sidebar-list-widget">
+              <!-- Security Score Card -->
+              <div class="glass-card" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding: 20px;">
+                <h4 style="font-size:0.9rem; font-weight:700; margin-bottom:12px; color:var(--text-secondary)">OVERALL SECURITY SCORE</h4>
+                <div class="scan-radial-container" style="width:130px; height:130px;">
+                  <svg class="scan-progress-ring" style="width:100%; height:100%">
+                    <circle cx="65" cy="65" r="54" stroke="var(--bg-tertiary)" stroke-width="8" fill="transparent"/>
+                    <circle cx="65" cy="65" r="54" id="radialHealthProgress" stroke="var(--color-cyan)" stroke-width="8" fill="transparent" stroke-dasharray="339.29" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.8s ease-in-out;"/>
+                  </svg>
+                  <div class="scan-progress-value" style="font-size:1.6rem" id="metricSecurityScore">100%</div>
+                </div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:12px;">Based on composite GSMA vulnerability checks</p>
+              </div>
+              
+              <!-- Recent Threat Logs -->
+              <div class="glass-card" style="flex-grow:1;">
+                <div class="card-header" style="margin-bottom:12px;">
+                  <h3 style="font-size:0.95rem;">Recent Security Alerts</h3>
+                </div>
+                <div class="feed-list" id="dashboardRecentThreats">
+                  <!-- Dynamic Notifications List -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- Bottom analytics graphs -->
+            <div class="charts-row">
+              <div class="glass-card">
+                <div class="card-header"><h3>Security Risk Trend (Density)</h3></div>
+                <div style="height: 220px;"><canvas id="riskTrendChart"></canvas></div>
+              </div>
+              <div class="glass-card">
+                <div class="card-header"><h3>Threat Distribution Breakdown</h3></div>
+                <div style="height: 220px;"><canvas id="threatDistributionChart"></canvas></div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3.2: SLICES MANAGEMENT                -->
+        <!-- ========================================== -->
+        <div id="slicesView" class="app-view-section">
+          <div class="glass-card slice-filters-row">
+            <div style="display:flex; gap:12px; flex-grow:1; max-width:600px;">
+              <input type="text" id="sliceSearchInput" class="input-field" placeholder="Search slices name (e.g. MTN_5G)...">
+              <select id="sliceTypeFilter" class="select-field" style="width:160px;">
+                <option value="">All Types</option>
+                <option value="eMBB">eMBB (High Bandwidth)</option>
+                <option value="URLLC">URLLC (Low Latency)</option>
+                <option value="mMTC">mMTC (Massive IoT)</option>
+              </select>
+              <select id="sliceStatusFilter" class="select-field" style="width:140px;">
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+                <option value="scanning">Scanning</option>
+              </select>
+            </div>
+            <div style="display:flex; gap:12px;">
+              <select id="sliceSortSelect" class="select-field" style="width:160px;">
+                <option value="name">Sort by Name</option>
+                <option value="latency">Sort by Latency</option>
+                <option value="bandwidth">Sort by Bandwidth</option>
+                <option value="health_score">Sort by Health</option>
+              </select>
+              <button class="btn btn-cyan btn-primary auth-write" onclick="openCreateSliceModal()">
+                <i class="fas fa-plus"></i> Deploy Slice
+              </button>
+            </div>
+          </div>
+          
+          <div class="slice-grid-container" id="sliceGridContainer">
+            <!-- Dynamic Slice Cards grid -->
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3.3: VULNERABILITY SCANNER            -->
+        <!-- ========================================== -->
+        <div id="scannerView" class="app-view-section">
+          <div class="glass-card scan-setup-card">
+            <div class="card-header"><h3>Select Scan Target Profile</h3></div>
+            <div style="display:flex; gap:16px; align-items:center;">
+              <div class="form-group" style="margin-bottom:0; flex-grow:1;">
+                <select id="scanSliceSelect" class="select-field">
+                  <!-- Slice Select Choices -->
+                </select>
+              </div>
+              <button class="btn btn-cyan btn-primary auth-write" id="startScanBtn" onclick="startVulnerabilityScan()">
+                <i class="fas fa-radar"></i> <span id="scanLoaderText">START VULNERABILITY SCAN</span>
+              </button>
+            </div>
+          </div>
+          
+          <div class="scan-progress-grid">
+            <div class="glass-card scan-progress-card">
+              <h4>Scanning progress</h4>
+              <div class="scan-radial-container">
+                <svg class="scan-progress-ring">
+                  <circle cx="90" cy="90" r="76" stroke="var(--bg-tertiary)" stroke-width="10" fill="transparent"/>
+                  <circle cx="90" cy="90" r="76" id="scanRadialStrokeOffset" stroke="var(--color-cyan)" stroke-width="10" fill="transparent" stroke-dasharray="477.52" stroke-dashoffset="477.52" style="transition: stroke-dashoffset 0.5s ease-out;"/>
+                </svg>
+                <div class="scan-progress-value" id="scanRadialProgressValue">0%</div>
+              </div>
+              
+              <div class="scan-indicators-list">
+                <div class="scan-indicator-item pending" id="ind_auth"><i class="far fa-circle"></i> Auth</div>
+                <div class="scan-indicator-item pending" id="ind_enc"><i class="far fa-circle"></i> Encryption</div>
+                <div class="scan-indicator-item pending" id="ind_api"><i class="far fa-circle"></i> APIs</div>
+                <div class="scan-indicator-item pending" id="ind_firewall"><i class="far fa-circle"></i> Firewall</div>
+                <div class="scan-indicator-item pending" id="ind_isolation"><i class="far fa-circle"></i> Isolation</div>
+                <div class="scan-indicator-item pending" id="ind_ports"><i class="far fa-circle"></i> Ports</div>
+                <div class="scan-indicator-item pending" id="ind_soft"><i class="far fa-circle"></i> Software</div>
+                <div class="scan-indicator-item pending" id="ind_iam"><i class="far fa-circle"></i> IAM</div>
+                <div class="scan-indicator-item pending" id="ind_certs"><i class="far fa-circle"></i> Certificates</div>
+                <div class="scan-indicator-item pending" id="ind_config"><i class="far fa-circle"></i> Config</div>
+              </div>
+            </div>
+            
+            <div class="glass-card scan-terminal-card">
+              <div class="card-header">
+                <h3>Live Scanner Engine Log Console</h3>
+                <span class="badge badge-scanning" style="font-family: var(--font-mono); font-size: 0.75rem;">CONSOLE ACTIVE</span>
+              </div>
+              <div class="terminal-console" id="scanTerminalLog">
+                <div class="terminal-line">[INFO] System idle. Select a slice and click START.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3.4: THREATS CENTER (REMEDIATION)     -->
+        <!-- ========================================== -->
+        <div id="threatsView" class="app-view-section">
+          <div class="remediation-guide-card">
+            <div class="glass-card">
+              <div class="card-header">
+                <h3>Threat Registry & Intelligent Remediation</h3>
+                <span class="badge badge-critical">Active Risks</span>
+              </div>
+              <p style="color:var(--text-secondary); margin-bottom: 20px; font-size:0.9rem;">Review and resolve detected system vulnerability exposures. Click mitigation guides to check terminal code snippets and mitigate exposures immediately.</p>
+              
+              <div style="display:flex; flex-direction:column; gap:12px;" id="threatsListContainer">
+                <!-- Dynamic Threat remediation items -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3.5: ANALYTICS (HEAT MAP & CHARTS)    -->
+        <!-- ========================================== -->
+        <div id="analyticsView" class="app-view-section">
+          <div class="analytics-grid">
+            
+            <div class="glass-card attack-heatmap-card">
+              <div class="card-header">
+                <h3>Global Threat Vector Map</h3>
+                <span class="badge badge-critical" style="background-color: rgba(255, 61, 87, 0.15)">Blocked Attacks Feed</span>
+              </div>
+              <div class="heatmap-canvas-container">
+                <canvas id="worldMapCanvas"></canvas>
+              </div>
+            </div>
+            
+            <div class="glass-card">
+              <div class="card-header"><h3>Active Slices Health Performance</h3></div>
+              <div style="height: 240px;"><canvas id="slicePerfChart"></canvas></div>
+            </div>
+            
+            <div class="glass-card">
+              <div class="card-header"><h3>System Resource Monitor</h3></div>
+              <div style="height: 240px;"><canvas id="systemResourcesChart"></canvas></div>
+            </div>
+            
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3.6: REPORTS CARD                     -->
+        <!-- ========================================== -->
+        <div id="reportsView" class="app-view-section">
+          <div class="glass-card" style="margin-bottom:24px;">
+            <div class="card-header"><h3>Export Security Audit Report Card</h3></div>
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; align-items:flex-end;">
+              <div class="form-group" style="margin-bottom:0">
+                <label>Select Audit Target</label>
+                <select id="reportAssessmentSelect" class="select-field"></select>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label>Export Format</label>
+                <select id="reportFormatSelect" class="select-field">
+                  <option value="CSV">Comma Separated Values (CSV)</option>
+                  <option value="EXCEL">Excel Spreadsheet Table (CSV)</option>
+                  <option value="PDF">HTML Printed PDF</option>
+                </select>
+              </div>
+              <div style="display:flex; gap:12px;">
+                <button class="btn btn-cyan btn-primary auth-write" onclick="generateReport()">
+                  <i class="fas fa-file-export"></i> Compile Report
+                </button>
+                <button class="btn btn-secondary" onclick="printSelectedReport()">
+                  <i class="fas fa-print"></i> Print PDF View
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="glass-card">
+            <div class="card-header"><h3>Generated Security Reports Archive</h3></div>
+            <div class="table-container">
+              <table class="enterprise-table">
+                <thead>
+                  <tr>
+                    <th>Report Name</th>
+                    <th>Format</th>
+                    <th>Audit Metric</th>
+                    <th>Created At</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="reportsTableBody">
+                  <!-- Dynamic Reports rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3.7: AUDIT LOGS                       -->
+        <!-- ========================================== -->
+        <div id="auditView" class="app-view-section">
+          <div class="glass-card">
+            <div class="card-header"><h3>Operations Cryptographic Audit Trail</h3></div>
+            <div class="table-container">
+              <table class="enterprise-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Operator</th>
+                    <th>Action Type</th>
+                    <th>Transaction Details</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="auditLogsTableBody">
+                  <!-- Dynamic Audit Logs rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3.8: SETTINGS                         -->
+        <!-- ========================================== -->
+        <div id="settingsView" class="app-view-section">
+          <div class="glass-card" style="max-width: 680px; margin: 0 auto;">
+            <div class="card-header" style="border-bottom:1px solid var(--border-glass); padding-bottom:16px; margin-bottom:24px;">
+              <h3>NOC Platform Configurations</h3>
+            </div>
+            
+            <form id="settingsForm">
+              <div class="form-group">
+                <label for="setAlertEmail">Alarm Notification Email Feed</label>
+                <input type="email" id="setAlertEmail" class="input-field" placeholder="noc-alerts@sentraslice.io">
+              </div>
+              
+              <div class="form-group">
+                <label for="setAlertPhone">Alarm Notification SMS Feed</label>
+                <input type="text" id="setAlertPhone" class="input-field" placeholder="+15550198">
+              </div>
+              
+              <div class="form-group">
+                <label for="setScanProfile">Baseline Scanner Intensity</label>
+                <select id="setScanProfile" class="select-field">
+                  <option value="Standard Baseline Scan">Standard Baseline Audit</option>
+                  <option value="Deep Packet Inspection">Deep Tunnel Inspection</option>
+                  <option value="Aggressive Penetration Probe">Aggressive Security Penetration</option>
+                </select>
+              </div>
+              
+              <div class="form-group" style="margin-top:24px;">
+                <label class="switch-container">
+                  <input type="checkbox" id="setAutoMitigate" class="switch-input">
+                  <span class="switch-slider"></span>
+                  <div>
+                    <strong style="display:block; font-size:0.85rem">Automated VNF Remediation</strong>
+                    <span style="font-size:0.75rem; color:var(--text-muted)">Auto-trigger mitigation commands upon vulnerability detection</span>
+                  </div>
+                </label>
+              </div>
+              
+              <div style="border-top:1px solid var(--border-glass); margin-top:32px; padding-top:20px; display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn btn-cyan btn-primary auth-write">
+                  <i class="fas fa-save"></i> Save Configurations
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3.9: USER MANAGEMENT (ADMIN ONLY)     -->
+        <!-- ========================================== -->
+        <div id="usersView" class="app-view-section">
+          <div class="glass-card">
+            <div class="card-header">
+              <h3>Admin User Management</h3>
+              <button class="btn btn-primary" onclick="alert('User creation modal would open here.')"><i class="fas fa-user-plus"></i> Add User</button>
+            </div>
+            <div class="table-container">
+              <table class="enterprise-table">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Last Login</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                  <tr><td colspan="5" style="text-align:center">Loading users...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SLICE EDIT/CREATE MODAL                    -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" id="sliceFormModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="sliceModalTitle">Create 5G Network Slice</h3>
+        <span class="modal-close" onclick="closeModal('sliceFormModal')">&times;</span>
+      </div>
+      <form id="sliceModalForm">
+        <div class="modal-body">
+          <input type="hidden" id="sliceModalId">
+          
+          <div class="form-group">
+            <label for="sliceName">Network Slice Name</label>
+            <input type="text" id="sliceName" class="input-field" placeholder="MTN_5G_eMBB_Gateway" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="sliceType">Slice Profile VNF Type</label>
+            <select id="sliceType" class="select-field" required>
+              <option value="eMBB">eMBB (High Bandwidth / Streaming / RAN)</option>
+              <option value="URLLC">URLLC (Low Latency / Remote Surgery / Autonomous)</option>
+              <option value="mMTC">mMTC (Massive Machine Type IoT / Smart Grid)</option>
+            </select>
+          </div>
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label for="sliceLatency">Simulated Latency (ms)</label>
+              <input type="number" id="sliceLatency" class="input-field" min="1" max="500" required>
+            </div>
+            <div class="form-group">
+              <label for="sliceBandwidth">Simulated Bandwidth (Gbps)</label>
+              <input type="number" id="sliceBandwidth" class="input-field" step="0.01" min="0.01" max="100.0" required>
+            </div>
+          </div>
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label for="sliceEncryption">Encryption Tunnel</label>
+              <select id="sliceEncryption" class="select-field">
+                <option value="AES-256">AES-256 (IPsec)</option>
+                <option value="WireGuard">WireGuard Tunnel</option>
+                <option value="None">None (Cleartext Link)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="sliceAuthentication">Authentication Method</label>
+              <select id="sliceAuthentication" class="select-field">
+                <option value="5G-AKA">5G-AKA Protocol</option>
+                <option value="SIM-based">SIM-based AKA authentication</option>
+                <option value="None">None (Unauthenticated access)</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group" style="margin-top:16px;">
+            <label class="switch-container">
+              <input type="checkbox" id="sliceFirewall" class="switch-input" checked>
+              <span class="switch-slider"></span>
+              <div>
+                <strong style="display:block; font-size:0.85rem">Edge Firewall ACLs</strong>
+                <span style="font-size:0.75rem; color:var(--text-muted)">Block packet transfers from untrusted external domains</span>
+              </div>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('sliceFormModal')">Cancel</button>
+          <button type="submit" class="btn btn-cyan btn-primary">Deploy Configuration</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- --- Core JS Scripts Loading --- -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/topology.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/slices.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/panels.js') }}"></script>
+  
+  <script>
+    // Global helper to toggle simple elements like bell dropdown
+    function toggleDropdown(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+    
+    // Close dropdowns if click outside
+    window.addEventListener('click', (e) => {
+      const bell = document.getElementById('notifBellBtn');
+      const dropdown = document.getElementById('notifDropdownContainer');
+      if (bell && dropdown && !bell.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vulnerability Assessment Report - {{ slice.name }}</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #333333;
+      line-height: 1.5;
+      padding: 40px;
+      margin: 0;
+    }
+    
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #0057FF;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .logo-section h1 {
+      margin: 0;
+      font-size: 24px;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+    }
+    
+    .logo-section span {
+      color: #0057FF;
+    }
+    
+    .meta-section {
+      text-align: right;
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .title-block {
+      margin-bottom: 40px;
+    }
+    
+    .title-block h2 {
+      font-size: 28px;
+      margin: 0 0 10px 0;
+      color: #0f172a;
+    }
+    
+    .title-block p {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+    }
+    
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    
+    .summary-card {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .summary-label {
+      font-size: 11px;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    
+    .summary-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #0f172a;
+    }
+    
+    .summary-value.danger { color: #FF3D57; }
+    .summary-value.warning { color: #FFB300; }
+    .summary-value.success { color: #00C853; }
+    
+    .section-title {
+      font-size: 16px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+      color: #0057FF;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    
+    .slice-info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 40px;
+    }
+    
+    .slice-info-table th, .slice-info-table td {
+      border: 1px solid #e2e8f0;
+      padding: 12px;
+      text-align: left;
+      font-size: 13px;
+    }
+    
+    .slice-info-table th {
+      background-color: #f8fafc;
+      font-weight: bold;
+      width: 30%;
+    }
+    
+    .vuln-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 40px;
+    }
+    
+    .vuln-table th, .vuln-table td {
+      border: 1px solid #e2e8f0;
+      padding: 12px;
+      text-align: left;
+      font-size: 13px;
+    }
+    
+    .vuln-table th {
+      background-color: #f8fafc;
+      font-weight: bold;
+    }
+    
+    .severity-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    
+    .severity-badge.critical { background-color: #fee2e2; color: #991b1b; }
+    .severity-badge.high { background-color: #ffedd5; color: #c2410c; }
+    .severity-badge.medium { background-color: #eff6ff; color: #1d4ed8; }
+    .severity-badge.low { background-color: #f0fdf4; color: #166534; }
+    
+    .signature-block {
+      margin-top: 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      page-break-inside: avoid;
+    }
+    
+    .sig-line {
+      width: 250px;
+      border-top: 1px solid #666;
+      margin-top: 50px;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      padding-top: 6px;
+    }
+    
+    .print-btn-container {
+      margin-bottom: 30px;
+      text-align: right;
+    }
+    
+    .print-btn {
+      background-color: #0057FF;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    
+    .print-btn:hover {
+      background-color: #0044cc;
+    }
+    
+    @media print {
+      .print-btn-container {
+        display: none;
+      }
+      body {
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="print-btn-container">
+    <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+  </div>
+  
+  <div class="report-header">
+    <div class="logo-section">
+      <h1>SENTRA<span>SLICE</span></h1>
+    </div>
+    <div class="meta-section">
+      <div>Report ID: #SSR-{{ assessment.id }}-{{ slice.id }}</div>
+      <div>Generated At: {{ generation_time }}</div>
+      <div>Classification: SECURE CORE // RESTRICTED</div>
+    </div>
+  </div>
+  
+  <div class="title-block">
+    <h2>5G Network Slice Vulnerability Assessment</h2>
+    <p>Target Slice Profile: <strong>{{ slice.name }}</strong></p>
+  </div>
+  
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="summary-label">Security score</div>
+      <div class="summary-value {% if assessment.security_score >= 85 %}success{% elif assessment.security_score >= 65 %}warning{% else %}danger{% endif %}">
+        {{ assessment.security_score }}%
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Risk rating</div>
+      <div class="summary-value {% if slice.risk_level == 'Low' %}success{% elif slice.risk_level == 'Medium' %}warning{% else %}danger{% endif %}">
+        {{ slice.risk_level }}
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Threats Detected</div>
+      <div class="summary-value {% if assessment.threat_count > 0 %}danger{% else %}success{% endif %}">
+        {{ assessment.threat_count }}
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Slice Health</div>
+      <div class="summary-value {% if assessment.security_score >= 85 %}success{% elif assessment.security_score >= 65 %}warning{% else %}danger{% endif %}">
+        Operational
+      </div>
+    </div>
+  </div>
+  
+  <div class="section-title">Slice Profile Configuration</div>
+  <table class="slice-info-table">
+    <tr>
+      <th>Profile Name</th>
+      <td>{{ slice.name }}</td>
+    </tr>
+    <tr>
+      <th>Network Service Type</th>
+      <td>{{ slice.slice_type }} (GTP-Tunnel Isolated Path)</td>
+    </tr>
+    <tr>
+      <th>Mean User-Plane Latency</th>
+      <td>{{ slice.latency }} ms</td>
+    </tr>
+    <tr>
+      <th>Peak Virtual Bandwidth</th>
+      <td>{{ slice.bandwidth }} Gbps</td>
+    </tr>
+    <tr>
+      <th>Encryption standard</th>
+      <td>{{ slice.encryption }}</td>
+    </tr>
+    <tr>
+      <th>Authentication Standard</th>
+      <td>{{ slice.authentication }}</td>
+    </tr>
+    <tr>
+      <th>Perimeter Firewall</th>
+      <td>{{ 'Active / Strict ACL rules' if slice.firewall else 'Disabled / Open Routing Link' }}</td>
+    </tr>
+  </table>
+  
+  <div class="section-title">Discovered Vulnerability Findings</div>
+  {% if vulnerabilities|length == 0 %}
+    <p style="font-size: 13px; color: #00C853; font-weight: bold; background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 16px; border-radius: 6px;">
+      [SUCCESS] No network slice vulnerability violations found. All security settings align with standard GSMA 5G guidelines.
+    </p>
+  {% else %}
+    <table class="vuln-table">
+      <thead>
+        <tr>
+          <th style="width: 25%">Vulnerability</th>
+          <th style="width: 15%">Category</th>
+          <th style="width: 10%">Severity</th>
+          <th style="width: 10%">CVSS v3</th>
+          <th style="width: 30%">Remediation Plan</th>
+          <th style="width: 10%">Time Estimate</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in vulnerabilities %}
+          <tr>
+            <td><strong>{{ v.name }}</strong></td>
+            <td>{{ v.category }}</td>
+            <td>
+              <span class="severity-badge {{ v.severity|lower }}">
+                {{ v.severity }}
+              </span>
+            </td>
+            <td><strong>{{ v.cvss_score }}</strong></td>
+            <td>{{ v.recommended_fix }}</td>
+            <td>{{ v.estimated_resolution_time }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+  
+  <div class="signature-block">
+    <div>
+      <div class="sig-line">Telecom Security Analyst Signature</div>
+      <div style="font-size: 10px; color:#999; margin-top: 4px; text-align: center;">ID: NOC-SA-2026</div>
+    </div>
+    <div style="text-align: right;">
+      <div style="font-size: 13px; font-weight: bold; color: #0f172a;">Sentraslice Certification Engine</div>
+      <div style="font-size: 11px; color:#666; margin-top: 4px;">Assessed under MTN / Airtel Compliance baseline v4.2</div>
+      <div style="font-size: 10px; color:#999; margin-top: 4px; font-family: monospace;">DIGITAL SIGNATURE VALIDATED // SECURE CERT</div>
+    </div>
+  </div>
+
+</body>
+</html>
