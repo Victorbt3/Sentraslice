@@ -14,141 +14,96 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'sentraslice_super_secret_session_encryption_key_2026')
 app.permanent_session_lifetime = timedelta(days=7)
 
-# Helper to ensure database is seeded
+# One-time init guard — safe for Vercel serverless cold starts
+_db_initialized = False
+
 def seed_data():
-    init_db()
-    seed_users()
-    
-    # Check if network slices already exist
-    if db_session.query(NetworkSlice).count() == 0:
-        # Create default network slices
-        mb = NetworkSlice(
-            name="MTN_5G_eMBB_Streaming",
-            slice_type="eMBB",
-            status="active",
-            latency=12,
-            bandwidth=12.5,
-            encryption="AES-256",
-            authentication="5G-AKA",
-            firewall=True,
-            health_score=92,
-            risk_level="Low"
-        )
-        db_session.add(mb)
-        
-        ur = NetworkSlice(
-            name="Airtel_5G_URLLC_Surgery",
-            slice_type="URLLC",
-            status="active",
-            latency=2,
-            bandwidth=1.2,
-            encryption="WireGuard",
-            authentication="SIM-based",
-            firewall=True,
-            health_score=100,
-            risk_level="Low"
-        )
-        db_session.add(ur)
-        
-        mt = NetworkSlice(
-            name="Ericsson_5G_mMTC_SmartGrid",
-            slice_type="mMTC",
-            status="active",
-            latency=48,
-            bandwidth=0.08,
-            encryption="None",
-            authentication="None",
-            firewall=False,
-            health_score=42,
-            risk_level="High"
-        )
-        db_session.add(mt)
-        db_session.commit()
-        
-        # Pre-seed a scan assessment and vulnerabilities for the vulnerable mMTC slice
-        assessment = Assessment(
-            slice_id=mt.id,
-            scanner_user_id=1, # Admin
-            risk_percentage=58.0,
-            security_score=42,
-            threat_count=3,
-            status='completed',
-            started_at=datetime.utcnow() - timedelta(hours=2),
-            completed_at=datetime.utcnow() - timedelta(hours=2) + timedelta(seconds=12)
-        )
-        db_session.add(assessment)
-        db_session.commit()
-        
-        v1 = Vulnerability(
-            assessment_id=assessment.id,
-            slice_id=mt.id,
-            name="No encryption on slice data plane",
-            category="Encryption",
-            description="Data packets traversing this slice are not encrypted. Traffic is susceptible to active interception and eavesdropping by rogue cells.",
-            severity="Critical",
-            cvss_score=9.8,
-            likelihood="High",
-            impact="Critical",
-            recommended_fix="Deploy IPsec tunnels or WireGuard configurations to secure data-plane communications between gNodeB and UPF.",
-            estimated_resolution_time="30 Mins",
-            status="detected"
-        )
-        db_session.add(v1)
-        
-        v2 = Vulnerability(
-            assessment_id=assessment.id,
-            slice_id=mt.id,
-            name="Slice border firewall disabled",
-            category="Firewall",
-            description="The slice perimeter firewall is disabled or misconfigured, permitting unrestricted packet flows from neighboring network slices.",
-            severity="Critical",
-            cvss_score=9.6,
-            likelihood="High",
-            impact="Critical",
-            recommended_fix="Enable the perimeter firewall on the slice virtual network function (VNF) and load standard baseline ACL rules.",
-            estimated_resolution_time="5 Mins",
-            status="detected"
-        )
-        db_session.add(v2)
-        
-        v3 = Vulnerability(
-            assessment_id=assessment.id,
-            slice_id=mt.id,
-            name="Unnecessary open ports on UPF node",
-            category="Ports",
-            description="User Plane Function (UPF) nodes are exposing management ports (SSH 22, HTTP 8080) directly to the public network interfaces.",
-            severity="Medium",
-            cvss_score=5.3,
-            likelihood="Medium",
-            impact="Low",
-            recommended_fix="Restrict public access to management ports using security groups and bound listener interfaces to internal VPN IPs only.",
-            estimated_resolution_time="15 Mins",
-            status="detected"
-        )
-        db_session.add(v3)
-        db_session.commit()
-        
-        # Add initial notifications
-        notif1 = Notification(
-            type="Critical",
-            title="Vulnerabilities Discovered on mMTC Grid",
-            message="Critical risk detected on slice Ericsson_5G_mMTC_SmartGrid: Firewall Disabled & No Encryption.",
-            created_at=datetime.utcnow() - timedelta(hours=2)
-        )
-        db_session.add(notif1)
-        
-        notif2 = Notification(
-            type="Info",
-            title="System Initialization Complete",
-            message="Sentraslice 5G Vulnerability Platform loaded security parameters.",
-            created_at=datetime.utcnow() - timedelta(hours=4)
-        )
-        db_session.add(notif2)
-        db_session.commit()
-        
-        # Add seed audit logs
-        log_activity(None, "SYSTEM", "Initialization", "Database schema and default configurations seeded.", "success")
-        log_activity(1, "admin", "Seed Slices", "Created MTN, Airtel, and Ericsson baseline slices.", "success")
+    """Initialize DB schema and seed default data. Safe to call multiple times."""
+    global _db_initialized
+    if _db_initialized:
+        return
+    try:
+        init_db()
+        seed_users()
+
+        # Only seed slices if table is empty
+        if db_session.query(NetworkSlice).count() == 0:
+            mb = NetworkSlice(
+                name="MTN_5G_eMBB_Streaming", slice_type="eMBB", status="active",
+                latency=12, bandwidth=12.5, encryption="AES-256",
+                authentication="5G-AKA", firewall=True, health_score=92, risk_level="Low"
+            )
+            ur = NetworkSlice(
+                name="Airtel_5G_URLLC_Surgery", slice_type="URLLC", status="active",
+                latency=2, bandwidth=1.2, encryption="WireGuard",
+                authentication="SIM-based", firewall=True, health_score=100, risk_level="Low"
+            )
+            mt = NetworkSlice(
+                name="Ericsson_5G_mMTC_SmartGrid", slice_type="mMTC", status="active",
+                latency=48, bandwidth=0.08, encryption="None",
+                authentication="None", firewall=False, health_score=42, risk_level="High"
+            )
+            db_session.add_all([mb, ur, mt])
+            db_session.commit()
+
+            assessment = Assessment(
+                slice_id=mt.id, scanner_user_id=1,
+                risk_percentage=58.0, security_score=42, threat_count=3,
+                status='completed',
+                started_at=datetime.utcnow() - timedelta(hours=2),
+                completed_at=datetime.utcnow() - timedelta(hours=2) + timedelta(seconds=12)
+            )
+            db_session.add(assessment)
+            db_session.commit()
+
+            db_session.add_all([
+                Vulnerability(
+                    assessment_id=assessment.id, slice_id=mt.id,
+                    name="No encryption on slice data plane", category="Encryption",
+                    description="Data packets traversing this slice are not encrypted. Traffic is susceptible to active interception and eavesdropping by rogue cells.",
+                    severity="Critical", cvss_score=9.8, likelihood="High", impact="Critical",
+                    recommended_fix="Deploy IPsec tunnels or WireGuard configurations to secure data-plane communications between gNodeB and UPF.",
+                    estimated_resolution_time="30 Mins", status="detected"
+                ),
+                Vulnerability(
+                    assessment_id=assessment.id, slice_id=mt.id,
+                    name="Slice border firewall disabled", category="Firewall",
+                    description="The slice perimeter firewall is disabled or misconfigured, permitting unrestricted packet flows from neighboring network slices.",
+                    severity="Critical", cvss_score=9.6, likelihood="High", impact="Critical",
+                    recommended_fix="Enable the perimeter firewall on the slice VNF and load standard baseline ACL rules.",
+                    estimated_resolution_time="5 Mins", status="detected"
+                ),
+                Vulnerability(
+                    assessment_id=assessment.id, slice_id=mt.id,
+                    name="Unnecessary open ports on UPF node", category="Ports",
+                    description="UPF nodes are exposing management ports (SSH 22, HTTP 8080) directly to the public network interfaces.",
+                    severity="Medium", cvss_score=5.3, likelihood="Medium", impact="Low",
+                    recommended_fix="Restrict public access to management ports using security groups and bound listener interfaces to internal VPN IPs only.",
+                    estimated_resolution_time="15 Mins", status="detected"
+                ),
+                Notification(
+                    type="Critical", title="Vulnerabilities Discovered on mMTC Grid",
+                    message="Critical risk detected on slice Ericsson_5G_mMTC_SmartGrid: Firewall Disabled & No Encryption.",
+                    created_at=datetime.utcnow() - timedelta(hours=2)
+                ),
+                Notification(
+                    type="Info", title="System Initialization Complete",
+                    message="Sentraslice 5G Vulnerability Platform loaded security parameters.",
+                    created_at=datetime.utcnow() - timedelta(hours=4)
+                ),
+            ])
+            db_session.commit()
+
+        _db_initialized = True
+    except Exception as e:
+        db_session.rollback()
+        print(f"[SliceGuard] DB seed warning: {e}")
+        _db_initialized = True  # Don't retry on every request even if seed fails
+
+@app.before_request
+def ensure_db_ready():
+    """Called before every request — initializes DB on first cold start."""
+    seed_data()
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
@@ -813,10 +768,6 @@ def save_settings():
     db_session.commit()
     log_activity(session['user_id'], session['username'], "Save Settings", "Updated system configurations", "success")
     return jsonify({"message": "Settings saved successfully", "settings": data}), 200
-
-# --- SEED & LAUNCH EXECUTION ---
-with app.app_context():
-    seed_data()
 
 if __name__ == '__main__':
     # Bind to all interfaces for local testing
