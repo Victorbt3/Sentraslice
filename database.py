@@ -11,9 +11,10 @@ if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
 # If no remote DB provided (local dev), use SQLite
-# On Vercel with no DATABASE_URL, use in-memory SQLite as fallback
+# On Vercel with no DATABASE_URL, use /tmp which is the only writable directory
 if not db_url:
-    db_url = 'sqlite:///sliceguard.db'
+    # Use /tmp for serverless environments (like Vercel AWS Lambda) where root is read-only
+    db_url = 'sqlite:////tmp/sliceguard.db' if os.environ.get('VERCEL') or os.environ.get('AWS_EXECUTION_ENV') else 'sqlite:///sliceguard.db'
 
 # SQLite needs check_same_thread=False; Postgres does not
 connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
