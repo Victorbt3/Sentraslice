@@ -60,8 +60,8 @@ def create_report_record(assessment_id, file_format, user_id):
     report_name = f"Sentraslice_Report_{slice_obj.name}_{timestamp}.{file_format.lower()}"
     
     # Ensure reports directory exists
-    # On Vercel (read-only), we must use /tmp
-    base_dir = "/tmp" if os.environ.get('VERCEL') or os.environ.get('AWS_EXECUTION_ENV') else "static"
+    # On read-only filesystems (like Vercel), we must use /tmp
+    base_dir = "static" if os.access('.', os.W_OK) else "/tmp"
     reports_dir = os.path.join(base_dir, "generated_reports")
     if not os.path.exists(reports_dir):
         os.makedirs(reports_dir)
