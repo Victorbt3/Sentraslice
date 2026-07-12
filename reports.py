@@ -61,7 +61,16 @@ def create_report_record(assessment_id, file_format, user_id):
     
     # Ensure reports directory exists
     # On read-only filesystems (like Vercel), we must use /tmp
-    base_dir = "static" if os.access('.', os.W_OK) else "/tmp"
+    try:
+        test_file = '.test_write_rep'
+        with open(test_file, 'w') as f:
+            f.write('1')
+        import os
+        os.remove(test_file)
+        base_dir = "static"
+    except Exception:
+        base_dir = "/tmp"
+        
     reports_dir = os.path.join(base_dir, "generated_reports")
     if not os.path.exists(reports_dir):
         os.makedirs(reports_dir)

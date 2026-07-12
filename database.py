@@ -10,12 +10,17 @@ db_url = os.environ.get('DATABASE_URL', '')
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-# If no remote DB provided (local dev), use SQLite
-# Check if current directory is writable. If not (like on Vercel), fallback to /tmp
+# Check if current directory is actually writable. If not (like on Vercel), fallback to /tmp
 if not db_url:
-    if os.access('.', os.W_OK):
+    try:
+        # Actually try to write a file to guarantee it's not a read-only mount
+        test_file = '.test_write_db'
+        with open(test_file, 'w') as f:
+            f.write('1')
+        import os
+        os.remove(test_file)
         db_url = 'sqlite:///sliceguard.db'
-    else:
+    except Exception:
         db_url = 'sqlite:////tmp/sliceguard.db'
 
 # SQLite needs check_same_thread=False; Postgres does not
