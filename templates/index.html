@@ -161,8 +161,11 @@
   <!-- ========================================== -->
   <div id="workspaceView" class="root-layout workspace-container" style="display: none;">
     
+    <!-- --- MOBILE SIDEBAR BACKDROP --- -->
+    <div id="mobileSidebarBackdrop" class="mobile-sidebar-backdrop" onclick="toggleMobileSidebar()"></div>
+
     <!-- --- SIDEBAR --- -->
-    <aside class="sidebar-panel">
+    <aside class="sidebar-panel" id="mainSidebar">
       <div>
         <div class="sidebar-brand">
           <div class="sidebar-logo">S</div>
@@ -221,10 +224,13 @@
       <div class="header-controls">
         <div class="system-status-indicator">
           <span class="status-dot pulse"></span>
-          <span>NOC Status: Operational</span>
+          <span class="status-text">NOC Status: Operational</span>
         </div>
         <button class="btn btn-outline theme-toggle" title="Toggle Color Theme">
           <i class="fas fa-sun"></i>
+        </button>
+        <button class="btn btn-outline mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileSidebar()" title="Menu">
+          <i class="fas fa-bars"></i>
         </button>
         
         <!-- Notification Dropdown -->
@@ -495,7 +501,7 @@
         <div id="reportsView" class="app-view-section">
           <div class="glass-card" style="margin-bottom:24px;">
             <div class="card-header"><h3>Export Security Audit Report Card</h3></div>
-            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; align-items:flex-end;">
+            <div class="responsive-grid-3" style="align-items:flex-end;">
               <div class="form-group" style="margin-bottom:0">
                 <label>Select Audit Target</label>
                 <select id="reportAssessmentSelect" class="select-field"></select>
@@ -673,7 +679,7 @@
             </select>
           </div>
           
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="responsive-grid-2">
             <div class="form-group">
               <label for="sliceLatency">Simulated Latency (ms)</label>
               <input type="number" id="sliceLatency" class="input-field" min="1" max="500" required>
@@ -684,7 +690,7 @@
             </div>
           </div>
           
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="responsive-grid-2">
             <div class="form-group">
               <label for="sliceEncryption">Encryption Tunnel</label>
               <select id="sliceEncryption" class="select-field">
@@ -738,6 +744,16 @@
       const el = document.getElementById(id);
       if (el) {
         el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+    
+    // Toggle Mobile Sidebar
+    function toggleMobileSidebar() {
+      const sidebar = document.getElementById('mainSidebar');
+      const backdrop = document.getElementById('mobileSidebarBackdrop');
+      if (sidebar && backdrop) {
+        sidebar.classList.toggle('mobile-open');
+        backdrop.classList.toggle('mobile-open');
       }
     }
     

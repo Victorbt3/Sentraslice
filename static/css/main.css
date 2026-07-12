@@ -286,6 +286,24 @@ input, button, select, textarea {
   gap: 24px;
 }
 
+.mobile-menu-btn {
+  display: none;
+}
+
+.mobile-sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
 /* --- Responsive Adjustments --- */
 @media (max-width: 1024px) {
   .workspace-container {
@@ -316,15 +334,66 @@ input, button, select, textarea {
     grid-template-columns: 1fr;
     grid-template-rows: 60px 1fr;
   }
-  .sidebar-panel {
-    display: none; /* Mobile header menu toggle should be used in production */
+  .mobile-menu-btn {
+    display: flex;
   }
+  .status-text {
+    display: none;
+  }
+  
+  /* Off-canvas sidebar */
+  .sidebar-panel {
+    position: fixed;
+    top: 0;
+    left: -260px; /* Hide off-screen */
+    width: 260px;
+    height: 100vh;
+    z-index: 101;
+    transition: left var(--transition-normal);
+    padding: 24px 16px; /* Restore padding */
+  }
+  
+  .sidebar-panel.mobile-open {
+    left: 0;
+  }
+  
+  .mobile-sidebar-backdrop.mobile-open {
+    display: block;
+    opacity: 1;
+  }
+  
+  /* Restore text in sidebar when open */
+  .sidebar-brand h1, .operator-info, .sidebar-item span {
+    display: block;
+  }
+  .sidebar-brand {
+    justify-content: flex-start;
+    padding-left: 8px;
+  }
+  .sidebar-item a {
+    justify-content: flex-start;
+    padding: 12px 16px;
+  }
+  .operator-card {
+    justify-content: flex-start;
+    padding: 8px;
+  }
+
   .header-panel {
     grid-column: 1;
     padding: 0 16px;
   }
+  .header-controls {
+    gap: 12px;
+  }
   .main-viewport {
     grid-column: 1;
     padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-title-section h2 {
+    font-size: 1.1rem;
   }
 }
